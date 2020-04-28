@@ -1,0 +1,58 @@
+version: '3.4'
+
+services:
+  spindle-api:
+    build:
+      context: ./SpindleApi      
+      dockerfile: dockerfile
+    environment:
+      DB_USER: ${MONGOUSER}
+      DB_PASSWORD: ${MONGOPASS}
+    volumes:
+      - ./SpindleApi:/usr/src/app
+    ports:
+      - 5050:80
+    networks:
+      - spindle-db
+      - spindle-api
+
+  spindle-gui:
+    build:
+      context: ./SpindleGui      
+      dockerfile: dockerfile
+    volumes:
+      - ./SpindleGui:/usr/src/app
+    ports:
+      - 5055:80
+    networks:
+      - spindle-api
+
+  mongo:
+    image: mongo
+    #restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGOUSER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGOPASS}
+    volumes:
+      - "mongodb_data:/data/db"
+    networks:
+      - spindle-db
+    
+  mongo-express:
+    image: mongo-express
+    #restart: always
+    ports:
+      - ${MONGOEXPRESSPORT}:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGOUSER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGOPASS}
+    networks:
+      - spindle-db
+
+networks: 
+  spindle-db:
+  spindle-api:
+
+volumes:
+  mongodb_data:
+    driver: local
