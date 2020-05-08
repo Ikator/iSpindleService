@@ -13,6 +13,9 @@ def getSpindleName(pathname):
     if pathname is not None and pathname != '/':
         return pathname.split('/')[-1]
 
-def convertData(data, attribute ):
+def extractData(data, attribute ):
     return [d[attribute] for d in data]
             
+def convertData(data):
+    return extractData(data, 'datetime'), extractData(data, 'temperature'), extractData(data, 'gravity'), extractData(data, 'angle'), extractData(data, 'battery')
+      

@@ -12,6 +12,13 @@ app = dash.Dash('Spindle-Api')
 
 app.title = 'iSpindle'
 
+data_dict = {"DateTime":[],
+    "Temperature": [],
+    "Plato": [],
+    "Angle": [],
+    "Battery": []
+    }
+
 data = []
 
 app.layout = html.Div([
@@ -19,10 +26,16 @@ app.layout = html.Div([
         dcc.Location(id='url', refresh=False),
         html.H2(id='title', title='iSpindle'),
         ]),
+    dcc.Dropdown(id='spindle-data-names',
+            options=[{'label': s, 'value': s}
+                    for s in (list(data_dict.keys())[1:])],
+            value=['Temperature', 'Plato'],
+            multi=True
+            ),
     html.Div(children=html.Div(id='graph')),
     dcc.Interval(
         id='graph-update',
-        interval=10*1000),
+        interval=60*1000),
     ])
 
 
@@ -31,9 +44,10 @@ app.layout = html.Div([
 @app.callback(
     dash.dependencies.Output('graph','children'),
     [dash.dependencies.Input('graph-update', 'n_intervals'),
-    dash.dependencies.Input('url', 'pathname')]
+    dash.dependencies.Input('url', 'pathname'),
+    dash.dependencies.Input('spindle-data-names', 'value')]
     )
-def update_graph(interval, pathname):
+def update_graph(interval, pathname, data_names):
     spindleName = dc.getSpindleName(pathname)
     if spindleName is None:
         return
@@ -41,51 +55,22 @@ def update_graph(interval, pathname):
     if data is None:
         return
 
+    data_dict['DateTime'], data_dict['Temperature'], data_dict['Plato'], data_dict['Angle'], data_dict['Battery'] = dc.convertData(data)
+
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=dc.convertData(data,'datetime'),
-        y=dc.convertData(data,'temperature'),
-        name="Temperature"
-        ))
-    fig.add_trace(go.Scatter(
-        x=dc.convertData(data,'datetime') ,
-        y=dc.convertData(data,'gravity'),
-        name="°Plato",
-        yaxis="y2"
-        ))
+
+    for data_name in data_names:
+        fig.add_trace(go.Scatter(
+            x= data_dict['DateTime'],
+            y= data_dict[data_name],
+            name= data_name
+            ))
+    
 
     fig.update_layout(
         xaxis=dict(
             title="Date"
-        ),
-        yaxis=dict(
-            title="Temperature",
-            range=[-1,30],
-            titlefont=dict(
-                color="#1f77b4"
-            ),
-            tickfont=dict(
-                color="#1f77b4"
             )
-        ),
-        yaxis2=dict(
-            title="Plato",
-            range=[30,-1],
-            titlefont=dict(
-                color="#ff7f0e"
-            ),
-            tickfont=dict(
-                color="#ff7f0e"
-            ),
-            anchor="x",
-            overlaying="y",
-            side="right"
-        )
-    )
-    fig.update_layout(
-        title_text="iSpindle for " + spindleName,
-        width = 800,
-        height = 500
     )
 
     graph = html.Div(dcc.Graph(
@@ -102,6 +87,6 @@ def update_graph(interval, pathname):
 def display_page(pathname):
     spindleName = dc.getSpindleName(pathname)
     if spindleName is not None:
-        return 'iSpindle for ' + spindleName
-    return 'iSpindle'
+        return spindleName
+    return '404 balbla'
 

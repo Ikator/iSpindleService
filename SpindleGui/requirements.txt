@@ -4,6 +4,3 @@ dash-html-components
 dash-core-components
 plotly
 requests
-
-pandas
-pandas-datareader
